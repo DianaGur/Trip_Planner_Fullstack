@@ -1,38 +1,160 @@
+/* Custom styles for Trip Planner */
+
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  background-color: #f8f9fa;
+}
+
+/* Hover effects */
+.hover-shadow {
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+}
+
+.bg-gradient-success {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.bg-gradient-warning {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+}
+
+.bg-gradient-info {
+  background: linear-gradient(45deg, #17a2b8, #117a8b);
+}
+
+/* Navbar enhancements */
+.navbar-brand {
+  font-size: 1.5rem;
+}
+
+.navbar-nav .nav-link {
+  transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar-nav .nav-link.active {
+  color: #fff !important;
+  font-weight: 500;
+}
+
+/* Card enhancements */
+.card {
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* Button enhancements */
+.btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Form enhancements */
+.form-control, .form-select {
+  border-radius: 0.5rem;
+  border: 2px solid #e9ecef;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Loading spinner */
+.spinner-border {
+  animation: spinner-border 0.75s linear infinite;
+}
+
+/* RTL Support for Hebrew text */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Custom alert styles */
+.alert {
+  border-radius: 0.75rem;
+  border: none;
+}
+
+/* Dashboard stats cards */
+.card.bg-gradient-primary,
+.card.bg-gradient-success,
+.card.bg-gradient-warning,
+.card.bg-gradient-info {
+  border: none;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.card.bg-gradient-primary .card-body,
+.card.bg-gradient-success .card-body,
+.card.bg-gradient-warning .card-body,
+.card.bg-gradient-info .card-body {
+  padding: 1.5rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
   }
+  
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #007bff;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0056b3;
 }

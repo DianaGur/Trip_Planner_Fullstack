@@ -1,0 +1,39 @@
+client/src/
+├── components/          # רכיבים נפוצים
+│   ├── Auth/           # רכיבי הזדהות
+│   │   ├── Login.js
+│   │   ├── Register.js
+│   │   └── ProtectedRoute.js
+│   ├── Layout/         # רכיבי פריסה
+│   │   ├── Header.js
+│   │   ├── Navbar.js
+│   │   └── Footer.js
+│   ├── TripPlanner/    # רכיבי תכנון טיול
+│   │   ├── TripForm.js
+│   │   ├── MapDisplay.js
+│   │   ├── WeatherInfo.js
+│   │   └── TripResults.js
+│   └── TripHistory/    # רכיבי היסטוריה
+│       ├── TripList.js
+│       └── TripCard.js
+├── pages/              # דפים עיקריים
+│   ├── Home.js
+│   ├── PlanTrip.js     # דף תכנון מסלולים
+│   ├── TripHistory.js  # דף היסטוריה
+│   └── Profile.js
+├── services/           # קריאות API
+│   ├── api.js          # הגדרות Axios בסיסיות
+│   ├── authService.js  # שירותי אוטנטיקציה
+│   ├── tripService.js  # שירותי טיולים
+│   └── weatherService.js # שירותי מזג אוויר
+├── context/            # React Context
+│   └── AuthContext.js  # ניהול מצב משתמש
+├── utils/              # פונקציות עזר
+│   ├── constants.js
+│   └── helpers.js
+├── styles/             # קבצי CSS
+│   ├── components/
+│   └── pages/
+├── App.js              # רכיב ראשי
+├── App.css
+└── index.js            # נקודת כניסה
