@@ -5,7 +5,7 @@ A full‑stack web app that helps users generate city trips with points of inter
 Built with **React** (frontend) and **Node.js/Express + MongoDB** (backend) with **JWT** authentication.
 
 > **Note on declared limitations** (for transparency and grading):  
-> • Without real API keys (GROQ / OPENROUTE / MAPBOX / OPENWEATHER / PIXABAY) some features run in **demo** mode.  
+> • Without real API keys (GROQ / OPENROUTE / OPENWEATHER / PIXABAY) some features run in **demo** mode.  
 > • `/api/trips` and `/api/images` are **JWT‑protected**; unauthenticated requests return **401**.  
 > • No `docker-compose` or automated tests yet (run client & server separately).  
 > • Leaflet map icons are loaded from a CDN; **offline** usage requires hosting icons locally.
