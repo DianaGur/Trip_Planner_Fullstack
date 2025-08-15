@@ -1,39 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const Register = () => {
+  const { register, isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordMatch, setPasswordMatch] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const { register, loading, error, isAuthenticated, clearErrors } = useAuth();
-  const navigate = useNavigate();
-
-  // אם המשתמש כבר מחובר, הפנה לדף הבית
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
-  // ניקוי שגיאות בעת טעינת הרכיב
+  // Clear messages when form data changes
   useEffect(() => {
-    clearErrors();
-  }, [clearErrors]);
-
-  // בדיקת התאמת סיסמאות
-  useEffect(() => {
-    setPasswordMatch(
-      formData.password === formData.confirmPassword || formData.confirmPassword === ''
-    );
-  }, [formData.password, formData.confirmPassword]);
+    setError('');
+    setSuccess('');
+  }, [formData]);
 
   const handleChange = (e) => {
     setFormData({
@@ -45,36 +39,59 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // בדיקות validation
+    // Clear previous messages
+    setError('');
+    setSuccess('');
+    
+    // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('אנא מלא את כל השדות');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordMatch(false);
+    if (!formData.email.includes('@')) {
+      setError('אנא הכנס כתובת אימייל תקינה');
       return;
     }
 
     if (formData.password.length < 6) {
+      setError('הסיסמה חייבת להיות לפחות 6 תווים');
       return;
     }
 
-    const result = await register(formData.name, formData.email, formData.password);
-    
-    if (result.success) {
-      navigate('/dashboard');
+    if (formData.password !== formData.confirmPassword) {
+      setError('הסיסמאות אינן תואמות');
+      return;
     }
-  };
 
-  const isFormValid = () => {
-    return (
-      formData.name &&
-      formData.email &&
-      formData.password &&
-      formData.confirmPassword &&
-      passwordMatch &&
-      formData.password.length >= 6
-    );
+    setLoading(true);
+
+    try {
+      console.log('📝 Attempting registration...');
+      const result = await register(
+        formData.name, 
+        formData.email, 
+        formData.password, 
+        formData.confirmPassword
+      );
+
+      if (result.success) {
+        setSuccess(result.message);
+        console.log('✅ Registration successful, redirecting...');
+        
+        // Short delay to show success message
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      setError('שגיאה בהרשמה. אנא נסה שוב.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,24 +99,24 @@ const Register = () => {
       <div className="row justify-content-center">
         <div className="col-md-6 col-lg-5">
           <div className="card shadow">
-            <div className="card-header bg-success text-white text-center position-relative">
-              <h3 className="mb-0">
+            <div className="card-header bg-success text-white text-center">
+              <h4 className="mb-0">
                 <i className="fas fa-user-plus me-2"></i>
                 הרשמה
-              </h3>
-              <button
-                type="button"
-                className="btn-close btn-close-white position-absolute"
-                style={{ top: '15px', right: '15px' }}
-                onClick={() => navigate(-1)}
-                title="סגור"
-              ></button>
+              </h4>
             </div>
-            <div className="card-body p-4">
+            <div className="card-body">
               {error && (
                 <div className="alert alert-danger" role="alert">
                   <i className="fas fa-exclamation-triangle me-2"></i>
                   {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="alert alert-success" role="alert">
+                  <i className="fas fa-check-circle me-2"></i>
+                  {success}
                 </div>
               )}
 
@@ -117,8 +134,8 @@ const Register = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="הכנס את השם המלא שלך"
-                    required
                     disabled={loading}
+                    required
                   />
                 </div>
 
@@ -135,8 +152,8 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="הכנס את כתובת האימייל שלך"
-                    required
                     disabled={loading}
+                    required
                   />
                 </div>
 
@@ -145,32 +162,20 @@ const Register = () => {
                     <i className="fas fa-lock me-2"></i>
                     סיסמה
                   </label>
-                  <div className="input-group">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      className={`form-control ${formData.password && formData.password.length < 6 ? 'is-invalid' : ''}`}
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="הכנס סיסמה (לפחות 6 תווים)"
-                      required
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={loading}
-                    >
-                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                    </button>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="הכנס סיסמה (לפחות 6 תווים)"
+                    disabled={loading}
+                    required
+                  />
+                  <div className="form-text">
+                    הסיסמה חייבת להיות לפחות 6 תווים
                   </div>
-                  {formData.password && formData.password.length < 6 && (
-                    <div className="invalid-feedback d-block">
-                      הסיסמה חייבת להכיל לפחות 6 תווים
-                    </div>
-                  )}
                 </div>
 
                 <div className="mb-4">
@@ -178,43 +183,28 @@ const Register = () => {
                     <i className="fas fa-lock me-2"></i>
                     אימות סיסמה
                   </label>
-                  <div className="input-group">
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      className={`form-control ${!passwordMatch ? 'is-invalid' : ''}`}
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="הכנס את הסיסמה שוב"
-                      required
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      disabled={loading}
-                    >
-                      <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                    </button>
-                  </div>
-                  {!passwordMatch && (
-                    <div className="invalid-feedback d-block">
-                      הסיסמאות אינן תואמות
-                    </div>
-                  )}
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="הכנס את הסיסמה שוב"
+                    disabled={loading}
+                    required
+                  />
                 </div>
 
-                <div className="d-grid gap-2">
+                <div className="d-grid">
                   <button
                     type="submit"
                     className="btn btn-success btn-lg"
-                    disabled={loading || !isFormValid()}
+                    disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
                         נרשם...
                       </>
                     ) : (
@@ -227,18 +217,25 @@ const Register = () => {
                 </div>
               </form>
 
-              <hr className="my-4" />
+              <hr />
 
               <div className="text-center">
                 <p className="mb-0">
                   כבר יש לך חשבון?{' '}
                   <Link to="/login" className="text-decoration-none">
-                    <i className="fas fa-sign-in-alt me-1"></i>
                     התחבר כאן
                   </Link>
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Back to home link */}
+          <div className="text-center mt-3">
+            <Link to="/" className="text-muted text-decoration-none">
+              <i className="fas fa-arrow-right me-2"></i>
+              חזור לדף הבית
+            </Link>
           </div>
         </div>
       </div>

@@ -1,28 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 
 const Login = () => {
+  const { login, isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const { login, loading, error, isAuthenticated, clearErrors } = useAuth();
-  const navigate = useNavigate();
-
-  // אם המשתמש כבר מחובר, הפנה לדף הבית
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
-  // ניקוי שגיאות בעת טעינת הרכיב
+  // Clear messages when form data changes
   useEffect(() => {
-    clearErrors();
-  }, [clearErrors]);
+    setError('');
+    setSuccess('');
+  }, [formData]);
 
   const handleChange = (e) => {
     setFormData({
@@ -34,40 +37,69 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Clear previous messages
+    setError('');
+    setSuccess('');
+    
+    // Validation
     if (!formData.email || !formData.password) {
+      setError('אנא מלא את כל השדות');
       return;
     }
 
-    const result = await login(formData.email, formData.password);
-    
-    if (result.success) {
-      navigate('/dashboard');
+    if (!formData.email.includes('@')) {
+      setError('אנא הכנס כתובת אימייל תקינה');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log('🔐 Attempting login...');
+      const result = await login(formData.email, formData.password);
+
+      if (result.success) {
+        setSuccess(result.message);
+        console.log('✅ Login successful, redirecting...');
+        
+        // Short delay to show success message
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      setError('שגיאה בהתחברות. אנא נסה שוב.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
+        <div className="col-md-6 col-lg-4">
           <div className="card shadow">
-            <div className="card-header bg-primary text-white text-center position-relative">
-              <h3 className="mb-0">
+            <div className="card-header bg-primary text-white text-center">
+              <h4 className="mb-0">
                 <i className="fas fa-sign-in-alt me-2"></i>
                 התחברות
-              </h3>
-              <button
-                type="button"
-                className="btn-close btn-close-white position-absolute"
-                style={{ top: '15px', right: '15px' }}
-                onClick={() => navigate(-1)}
-                title="סגור"
-              ></button>
+              </h4>
             </div>
-            <div className="card-body p-4">
+            <div className="card-body">
               {error && (
                 <div className="alert alert-danger" role="alert">
                   <i className="fas fa-exclamation-triangle me-2"></i>
                   {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="alert alert-success" role="alert">
+                  <i className="fas fa-check-circle me-2"></i>
+                  {success}
                 </div>
               )}
 
@@ -85,48 +117,38 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="הכנס את כתובת האימייל שלך"
-                    required
                     disabled={loading}
+                    required
                   />
                 </div>
 
-                <div className="mb-3">
+                <div className="mb-4">
                   <label htmlFor="password" className="form-label">
                     <i className="fas fa-lock me-2"></i>
                     סיסמה
                   </label>
-                  <div className="input-group">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      className="form-control"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="הכנס את הסיסמה שלך"
-                      required
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={loading}
-                    >
-                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                    </button>
-                  </div>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="הכנס את הסיסמה שלך"
+                    disabled={loading}
+                    required
+                  />
                 </div>
 
-                <div className="d-grid gap-2">
+                <div className="d-grid">
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg"
-                    disabled={loading || !formData.email || !formData.password}
+                    disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
                         מתחבר...
                       </>
                     ) : (
@@ -139,13 +161,12 @@ const Login = () => {
                 </div>
               </form>
 
-              <hr className="my-4" />
+              <hr />
 
               <div className="text-center">
                 <p className="mb-0">
                   אין לך חשבון?{' '}
                   <Link to="/register" className="text-decoration-none">
-                    <i className="fas fa-user-plus me-1"></i>
                     הירשם כאן
                   </Link>
                 </p>
@@ -153,14 +174,12 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Demo credentials */}
-          <div className="card mt-3 bg-light">
-            <div className="card-body text-center py-2">
-              <small className="text-muted">
-                <i className="fas fa-info-circle me-1"></i>
-                לבדיקה: השתמש בכל אימייל וסיסמה (יצור חשבון אוטומטית בהרשמה)
-              </small>
-            </div>
+          {/* Back to home link */}
+          <div className="text-center mt-3">
+            <Link to="/" className="text-muted text-decoration-none">
+              <i className="fas fa-arrow-right me-2"></i>
+              חזור לדף הבית
+            </Link>
           </div>
         </div>
       </div>
