@@ -139,10 +139,6 @@ The `Trip` document (Mongoose) includes:
 ## Security & Rate Limiting
 - **JWT** auth middleware (`protect`) guards most trip and image routes.  
 - **CORS** is controlled via `CLIENT_URL`.  
-- **Rate limits** (from `server/middleware/auth.js`):  
-  - `loginRateLimit`: **5** attempts per **15 minutes** → *“Too many login attempts…”*  
-  - `registerRateLimit`: **3** registrations per **1 hour** → *“Too many registration attempts…”*  
-  - `generalRateLimit`: **100** requests per **15 minutes** → *“Too many requests…”*.
 
 ---
 
@@ -154,7 +150,7 @@ Trip_Planner_FP_WEB/
 │  ├─ models/            # Mongoose schemas (User, Trip)
 │  ├─ routes/            # /api/auth, /api/trips, /api/images
 │  ├─ services/          # aiService, routingService, weatherService, imageSearchService
-│  ├─ middleware/        # auth, rate limiting
+│  ├─ middleware/        # auth
 │  └─ server.js
 └─ client/
    └─ src/
@@ -175,10 +171,9 @@ Trip_Planner_FP_WEB/
 ---
 
 ## Known Issues
-- Missing API keys → demo data for AI/routing/weather/image.  
-- JWT required on most routes → 401 when missing/expired.  
-- No docker-compose & CI yet.  
-- Leaflet icons via CDN (breaks offline).
+- Rouut creating still need a minor improvment.
+- User stays loggef in when the server is shut down. 
+- Cities and interest points can be retirived from AI in the native langauge.   
 
 ---
 
@@ -189,9 +184,5 @@ Trip_Planner_FP_WEB/
 - ✅ Improve map UX (route editing, waypoint re‑ordering, POI categories/filters).
 
 ---
-
-## License
-Educational sample. Update `license` in `package.json` as needed.
-
 —  
 _Last updated: 2025-08-14_
