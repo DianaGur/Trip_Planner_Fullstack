@@ -273,7 +273,7 @@ const Home = () => {
                 </h1>
               </div>
 
-              {/* מסלול יצירת הטיול */}
+              {/* Stesp for creating a trip container*/}
               <div className="journey-container">
                 <h2 className="text-white text-center mb-5">
                   <i className="fas fa-route me-2"></i>

@@ -10,7 +10,7 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // סגירת dropdown בלחיצה מחוץ לו
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -28,7 +28,7 @@ const Navbar = () => {
     if (isLoggingOut) return;
     
     setIsLoggingOut(true);
-    setIsDropdownOpen(false); // סגירת התפריט
+    setIsDropdownOpen(false); // Close dropdown before logging out
     
     try {
       console.log('User clicking logout');
@@ -163,7 +163,7 @@ const Navbar = () => {
                   ></i>
                 </button>
 
-                {/* התפריט הנפתח */}
+                {/* Dropdown menu setup */}
                 {isDropdownOpen && (
                   <div 
                     className="position-absolute bg-white shadow rounded"
@@ -179,7 +179,7 @@ const Navbar = () => {
                       animation: 'fadeIn 0.2s ease-in-out'
                     }}
                   >
-                    {/* Header עם פרטי המשתמש */}
+                    {/* Header with user details*/}
                     <div style={{ 
                       padding: '16px',
                       backgroundColor: '#f8f9fa',
@@ -196,7 +196,7 @@ const Navbar = () => {
                       </div>
                     </div>
                     
-                    {/* כפתור התנתקות */}
+                    {/* Logout button */}
                     <div style={{ padding: '8px' }}>
                       <button
                         className="btn w-100 d-flex align-items-center justify-content-start text-danger"

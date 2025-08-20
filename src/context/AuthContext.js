@@ -12,42 +12,42 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // בדיקת סטטוס אותנטיקציה
+  // Check authentication status on initial load
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Checking authentication status...');
+      console.log('Checking authentication status...');
       
       const token = localStorage.getItem('token');
       
       if (!token) {
-        console.log('❌ No token found');
+        console.log('========No token found=========');
         setUser(null);
         setIsAuthenticated(false);
         return;
       }
 
-      // הגדרת טוקן ב-axios headers
+      // Set the token in axios headers
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      // בדיקת תקינות הטוקן עם השרת
+      // Validate the token with the server
       console.log('📡 Validating token with server...');
       const response = await axios.get('/api/auth/me', {
         timeout: 5000
       });
 
       if (response.data.success && response.data.data) {
-        console.log('✅ Token valid - user authenticated:', response.data.data.name);
+        console.log(' Token valid - user authenticated:', response.data.data.name);
         setUser(response.data.data);
         setIsAuthenticated(true);
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error('========Invalid response from server=========');
       }
 
     } catch (error) {
-      console.error('❌ Auth check failed:', error.message);
+      console.error('********** Auth check failed: ***********', error.message);
       
-      // אם השרת לא זמין או הטוקן לא תקין - נקה את הסשן
+      // Handle specific error cases
       if (error.code === 'ECONNREFUSED' || 
           error.response?.status === 401 || 
           error.response?.status === 403) {
@@ -59,40 +59,36 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ניקוי נתוני אותנטיקציה
+  // Clear authentication data
   const clearAuthData = () => {
     console.log('🧹 Clearing authentication data');
     
-    // ניקוי localStorage
     localStorage.removeItem('token');
     
-    // ניקוי axios headers
     delete axios.defaults.headers.common['Authorization'];
     
-    // ניקוי state
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  // התנתקות
+  // Logout function
   const logout = async (showMessage = true) => {
     try {
       console.log('👋 Logging out user:', user?.name || 'Unknown');
       
-      // נסה להודיע לשרת על ההתנתקות (אופציונלי)
       try {
         await axios.post('/api/auth/logout', {}, {
           timeout: 3000
         });
-        console.log('✅ Server notified of logout');
+        console.log(' Server notified of logout');
       } catch (serverError) {
-        console.log('⚠️ Could not notify server of logout:', serverError.message);
+        console.log('======= Could not notify server of logout: =========', serverError.message);
       }
       
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error('********** Logout error: *************', error);
     } finally {
-      // תמיד נקה את הנתונים המקומיים
+      // Clear local auth data
       clearAuthData();
       
       if (showMessage && user?.name) {
@@ -101,13 +97,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // בדיקת תקינות טוקן בטעינת האפליקציה
+  // Get focused keywords for a location using AI
   useEffect(() => {
     checkAuthStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // הגדרת Axios interceptor לטיפול בטוקנים פגי תוקף
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
@@ -126,7 +121,6 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // התחברות
   const login = async (email, password) => {
     try {
       console.log('🔐 Attempting login for:', email);
@@ -139,11 +133,9 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success && response.data.token && response.data.user) {
         const { token, user: userData } = response.data;
         
-        // שמירת הטוקן
         localStorage.setItem('token', token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        // עדכון state
         setUser(userData);
         setIsAuthenticated(true);
         
@@ -155,11 +147,11 @@ export const AuthProvider = ({ children }) => {
         };
         
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('=======Invalid response format=========');
       }
 
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error('******* Login error: ********', error);
       
       let errorMessage = 'שגיאה בהתחברות';
       
@@ -180,12 +172,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // הרשמה
+  // Register a new user
   const register = async (name, email, password, confirmPassword) => {
     try {
-      console.log('📝 Attempting registration for:', email);
+      console.log(' Attempting registration for:', email);
       
-      // ולידציה בסיסית
       if (password !== confirmPassword) {
         return {
           success: false,
@@ -209,15 +200,13 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success && response.data.token && response.data.user) {
         const { token, user: userData } = response.data;
         
-        // שמירת הטוקן
         localStorage.setItem('token', token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        // עדכון state
         setUser(userData);
         setIsAuthenticated(true);
         
-        console.log('✅ Registration successful:', userData.name);
+        console.log(' Registration successful:', userData.name);
         
         return {
           success: true,
@@ -225,11 +214,11 @@ export const AuthProvider = ({ children }) => {
         };
         
       } else {
-        throw new Error('Invalid response format');
+        throw new Error('=======Invalid response format=========');
       }
 
     } catch (error) {
-      console.error('❌ Registration error:', error);
+      console.error(' ***********Registration error: *************', error);
       
       let errorMessage = 'שגיאה בהרשמה';
       
@@ -250,21 +239,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // עדכון פרטי משתמש
+  // Update user data
   const updateUser = (updatedUserData) => {
-    console.log('👤 Updating user data:', updatedUserData.name);
+    console.log(' Updating user data:', updatedUserData.name);
     setUser(prevUser => ({
       ...prevUser,
       ...updatedUserData
     }));
   };
 
-  // בדיקה אם המשתמש מחובר
   const isLoggedIn = () => {
     return isAuthenticated && user && localStorage.getItem('token');
   };
 
-  // רענון טוקן (אם נדרש)
+
   const refreshAuth = async () => {
     if (!isLoggedIn()) {
       return false;
@@ -274,7 +262,7 @@ export const AuthProvider = ({ children }) => {
       await checkAuthStatus();
       return true;
     } catch (error) {
-      console.error('❌ Failed to refresh auth:', error);
+      console.error('******** Failed to refresh auth: ********', error);
       logout(false);
       return false;
     }

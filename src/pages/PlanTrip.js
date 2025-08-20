@@ -5,7 +5,15 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// תיקון אייקונים של Leaflet
+/**
+ * Plan Trip Component
+ * 
+ * Comprehensive trip planning interface with AI-powered route generation,
+ * interactive map visualization, location imagery, and trip persistence.
+ * Supports both hiking and cycling trip types with validation and real-time preview.
+ */
+
+// Fix Leaflet default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -14,7 +22,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const PlanTrip = () => {
-  const { user } = useContext(AuthContext); // קבלת פרטי המשתמש
+  const { user } = useContext(AuthContext);
   
   const [formData, setFormData] = useState({
     city: '',
@@ -26,21 +34,26 @@ const PlanTrip = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // 🖼️ State לתמונת מיקום
+  // Location image state management
   const [locationImage, setLocationImage] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [showLocationImage, setShowLocationImage] = useState(false);
 
-
-  // 📸 פונקציה לטעינת תמונה ספציפית של המיקום עם AI
+  /**
+   * Fetches AI-powered location image from server
+   * Integrates with image service API with fallback to demo images
+   * 
+   * @param {string} city - City name for image search
+   * @param {string} country - Optional country name for refined search
+   */
   const fetchLocationImage = async (city, country = '') => {
     if (!city) return;
     
     setImageLoading(true);
     try {
-      console.log(`🤖 Fetching AI-powered image for: ${city}, ${country}`);
+      console.log(`Fetching AI-powered image for: ${city}, ${country}`);
       
-      // קריאה לשרת שלנו שמשתמש ב-AI + Unsplash
+      // Build endpoint for image fetching
       const endpoint = country 
         ? `/api/images/location/${encodeURIComponent(city)}/${encodeURIComponent(country)}`
         : `/api/images/location/${encodeURIComponent(city)}`;
@@ -61,10 +74,10 @@ const PlanTrip = () => {
       if (data.success && data.data) {
         setLocationImage(data.data);
         setShowLocationImage(true);
-        console.log('✅ Got AI-powered image:', data.data.alt_description);
+        console.log('Got AI-powered image:', data.data.alt_description);
         
         if (data.message) {
-          console.log('ℹ️', data.message);
+          console.log(data.message);
         }
       } else {
         throw new Error('Invalid response from server');
@@ -72,7 +85,7 @@ const PlanTrip = () => {
       
     } catch (error) {
       console.error('Error fetching AI image:', error);
-      // תמונת דמה יפה אם יש בעיה
+      // Demo image fallback if API fails
       setLocationImage(getDemoLocationImage(city));
       setShowLocationImage(true);
     } finally {
@@ -80,7 +93,12 @@ const PlanTrip = () => {
     }
   };
 
-  // 🎨 תמונת דמה אם API לא עובד
+  /**
+   * Generates demo location image for fallback scenarios
+   * 
+   * @param {string} city - City name for demo image
+   * @returns {Object} Demo image object with required properties
+   */
   const getDemoLocationImage = (city) => ({
     id: 'demo-1',
     urls: { 
@@ -94,16 +112,18 @@ const PlanTrip = () => {
     location: { name: city }
   });
 
-  // 🎯 useEffect שמאזין ליצירת טיול חדש
+  // Automatically fetch image when trip is generated
   useEffect(() => {
     if (generatedTrip && generatedTrip.city) {
-      // כשנוצר טיול חדש, טען תמונה של העיר
       fetchLocationImage(generatedTrip.city, generatedTrip.country);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generatedTrip?.city]);
 
-  // 🖼️ רכיב תמונת המיקום
+  /**
+   * Location Image Display Component
+   * Renders location image with metadata and interactive controls
+   */
   const LocationImage = () => {
     if (!showLocationImage || !generatedTrip?.city) return null;
 
@@ -142,7 +162,7 @@ const PlanTrip = () => {
                   borderRadius: '0 0 8px 8px'
                 }}
               />
-              {/* Overlay עם מידע על התמונה */}
+              {/* Image metadata overlay */}
               <div 
                 className="position-absolute bottom-0 start-0 end-0 text-white p-3"
                 style={{
@@ -196,6 +216,10 @@ const PlanTrip = () => {
     setSuccess('');
   };
 
+  /**
+   * Handles trip generation with comprehensive validation
+   * Validates form data, sends API request, and processes response
+   */
   const handleGenerateTrip = async (e) => {
     e.preventDefault();
     
@@ -204,8 +228,11 @@ const PlanTrip = () => {
       return;
     }
 
-    // בדיקת מינימום ימים לרכיבה
-    if (formData.tripType === 'cycling' && formData.days < 2) {
+    // Convert days to number for proper validation
+    const numDays = parseInt(formData.days);
+    
+    // Check if number of days is valid for cycling
+    if (formData.tripType === 'cycling' && numDays < 2) {
       setError('טיול אופניים מינימום 2 ימים');
       return;
     }
@@ -213,30 +240,30 @@ const PlanTrip = () => {
     setLoading(true);
     setError('');
     setGeneratedTrip(null);
-    setShowLocationImage(false); // סגור גלריה קודמת
+    setShowLocationImage(false); 
 
     try {
-      console.log('🚀 Sending request to generate trip:', formData);
-      console.log('👤 Current user:', user?.name || 'Unknown');
+      console.log('Sending request to generate trip:', formData);
+      console.log('Current user:', user?.name || 'Unknown');
       
       const response = await axios.post('/api/trips/generate', {
         city: formData.city.trim(),
         tripType: formData.tripType,
-        days: parseInt(formData.days)
+        days: numDays // Send as number
       });
       
-      console.log('✅ Trip generation response:', response.data);
+      console.log('Trip generation response:', response.data);
       
       if (response.data.success && response.data.data) {
         setGeneratedTrip(response.data.data);
         setSuccess('מסלול נוצר בהצלחה!');
-        // התמונה תטען אוטומטית דרך useEffect
+        // Image will load automatically through useEffect
       } else {
         throw new Error('Invalid response format');
       }
       
     } catch (error) {
-      console.error('❌ Error generating trip:', error);
+      console.error('Error generating trip:', error);
       console.error('Error response:', error.response?.data);
       
       setError(
@@ -248,6 +275,10 @@ const PlanTrip = () => {
     }
   };
 
+  /**
+   * Handles trip saving with comprehensive data validation and cleaning
+   * Processes POI data, validates trip information, and persists to database
+   */
   const handleSaveTrip = async () => {
     if (!generatedTrip) {
       setError('אין מסלול לשמירה');
@@ -277,17 +308,7 @@ const PlanTrip = () => {
     setSuccess('');
 
     try {
-      console.log('💾 === ULTRA SAFE SAVING ===');
-      console.log('👤 User:', user.name, '(ID:', user.userId, ')');
-      console.log('📝 Trip name:', tripName.trim());
-      
-      // 🔍 דיבוג מעמיק של הנתונים המגיעים מהשרת
-      console.log('🧐 === DEBUGGING INCOMING DATA ===');
-      console.log('generatedTrip type:', typeof generatedTrip);
-      console.log('generatedTrip.pointsOfInterest type:', typeof generatedTrip.pointsOfInterest);
-      console.log('generatedTrip.pointsOfInterest isArray:', Array.isArray(generatedTrip.pointsOfInterest));
-      console.log('generatedTrip.pointsOfInterest value:', generatedTrip.pointsOfInterest);
-      
+      console.log('=== STARTING TRIP SAVE PROCESS ===');      
       if (generatedTrip.route?.dailyRoutes) {
         console.log('dailyRoutes type:', typeof generatedTrip.route.dailyRoutes);
         console.log('dailyRoutes isArray:', Array.isArray(generatedTrip.route.dailyRoutes));
@@ -301,9 +322,12 @@ const PlanTrip = () => {
         });
       }
 
-      // 🔧 פונקציית ניקוי אולטימטיבית של POIs
+      /**
+       * Ultimate POI cleaning function for data integrity
+       * Handles various data formats and ensures consistent structure
+       */
       const cleanPOIsArray = (poisInput, debugName = 'POIs') => {
-        console.log(`🧹 Cleaning ${debugName}:`, typeof poisInput, poisInput);
+        console.log(`Cleaning ${debugName}:`, typeof poisInput, poisInput);
         
         if (!poisInput) {
           console.log(`${debugName}: null/undefined -> empty array`);
@@ -313,7 +337,7 @@ const PlanTrip = () => {
         if (typeof poisInput === 'string') {
           console.log(`${debugName}: string detected, attempting parse...`);
           try {
-            // נסה JSON parse
+            // Try JSON parse
             const parsed = JSON.parse(poisInput);
             if (Array.isArray(parsed)) {
               console.log(`${debugName}: JSON parse successful`);
@@ -322,7 +346,6 @@ const PlanTrip = () => {
           } catch (e) {
             console.log(`${debugName}: JSON parse failed, trying eval...`);
             try {
-              // עדיף להימנע מeval, אבל זה לדיבוג בלבד
               // eslint-disable-next-line no-eval
               const evaluated = eval(poisInput);
               if (Array.isArray(evaluated)) {
@@ -342,7 +365,6 @@ const PlanTrip = () => {
           return [];
         }
         
-        // נקה כל אלמנט בarray
         const cleaned = poisInput.map((poi, index) => {
           if (!poi || typeof poi !== 'object') {
             console.log(`${debugName}[${index}]: invalid object, skipping`);
@@ -368,7 +390,7 @@ const PlanTrip = () => {
         return cleaned;
       };
 
-      
+      // Clean main POIs and daily route POIs
       const cleanPOIs = cleanPOIsArray(generatedTrip.pointsOfInterest, 'Main POIs');
       
       const cleanDailyRoutes = Array.isArray(generatedTrip.route?.dailyRoutes) 
@@ -391,13 +413,13 @@ const PlanTrip = () => {
             },
             estimatedDuration: Number(day.estimatedDuration) || 0,
             difficulty: String(day.difficulty || 'moderate'),
-            pointsOfInterest: cleanPOIsArray(day.pointsOfInterest, `Day ${index + 1} POIs`), // נקה POIs ליום
+            pointsOfInterest: cleanPOIsArray(day.pointsOfInterest, `Day ${index + 1} POIs`),
             isValidDistance: Boolean(day.isValidDistance),
             targetRange: String(day.targetRange || '')
           }))
         : [];
 
-      // 🔧 בניית נתוני הטיול הסופיים
+      // Build comprehensive trip data structure
       const tripData = {
         name: tripName.trim(),
         description: tripDescription.trim(),
@@ -413,15 +435,15 @@ const PlanTrip = () => {
           averageDaily: Number(generatedTrip.route?.averageDaily) || 0,
           rules: String(generatedTrip.route?.rules || '')
         },
-        pointsOfInterest: cleanPOIs, // POIs נקיים
+        pointsOfInterest: cleanPOIs, 
         image: generatedTrip.image || null,
         tags: Array.isArray(generatedTrip.tags) ? generatedTrip.tags : [generatedTrip.tripType],
         weather: generatedTrip.weather || null,
         aiGenerated: Boolean(generatedTrip.aiGenerated)
       };
 
-      console.log('📤 === FINAL VALIDATION BEFORE SEND ===');
-      console.log('🔍 Trip data structure:');
+      console.log('=== FINAL VALIDATION BEFORE SEND ===');
+      console.log('Trip data structure:');
       console.log('- pointsOfInterest type:', typeof tripData.pointsOfInterest);
       console.log('- pointsOfInterest isArray:', Array.isArray(tripData.pointsOfInterest));
       console.log('- pointsOfInterest length:', tripData.pointsOfInterest.length);
@@ -429,23 +451,22 @@ const PlanTrip = () => {
       console.log('- route.dailyRoutes isArray:', Array.isArray(tripData.route.dailyRoutes));
       console.log('- route.dailyRoutes length:', tripData.route.dailyRoutes.length);
       
-      // בדוק כל dailyRoute
+      // Validate daily routes POI structure
       tripData.route.dailyRoutes.forEach((day, index) => {
         console.log(`Day ${index + 1} validation:`);
         console.log(`  pointsOfInterest type:`, typeof day.pointsOfInterest);
         console.log(`  pointsOfInterest isArray:`, Array.isArray(day.pointsOfInterest));
         console.log(`  pointsOfInterest length:`, day.pointsOfInterest.length);
         
-        // בדוק כל POI ביום
         day.pointsOfInterest.forEach((poi, poiIndex) => {
           console.log(`    POI ${poiIndex}: ${typeof poi} - ${poi?.name}`);
           if (typeof poi !== 'object' || Array.isArray(poi)) {
-            console.error(`⚠️ DANGER: POI ${poiIndex} is not object!`);
+            console.error(`DANGER: POI ${poiIndex} is not object!`);
           }
         });
       });
 
-      console.log('📤 Sending ultra-clean trip data...');
+      console.log('Sending ultra-clean trip data...');
 
       const response = await axios.post('/api/trips', tripData, {
         headers: {
@@ -453,14 +474,14 @@ const PlanTrip = () => {
         }
       });
       
-      console.log('📥 Server response:', response.data);
+      console.log('Server response:', response.data);
       
       if (response.data.success) {
         setSuccess(`המסלול "${tripName.trim()}" נשמר בהצלחה!`);
-        console.log('✅ Trip saved successfully with ID:', response.data.data?.id);
+        console.log('Trip saved successfully with ID:', response.data.data?.id);
         
         if (response.data.userStats) {
-          console.log('📊 Updated user stats:', response.data.userStats);
+          console.log('Updated user stats:', response.data.userStats);
         }
         
         setTimeout(() => setSuccess(''), 5000);
@@ -490,6 +511,11 @@ const PlanTrip = () => {
     }
   };
 
+  /**
+   * Calculates average daily distance for the generated trip
+   * 
+   * @returns {number} Average kilometers per day
+   */
   const calculateDailyAverage = () => {
     if (!generatedTrip?.route?.totalDistance || !generatedTrip?.route?.totalDays) {
       return 0;
@@ -497,7 +523,12 @@ const PlanTrip = () => {
     return Math.round(generatedTrip.route.totalDistance / generatedTrip.route.totalDays * 100) / 100;
   };
 
-  // הכנת נתונים למפה
+  /**
+   * Prepares map data for visualization
+   * Extracts coordinates and calculates polyline positions
+   * 
+   * @returns {Object|null} Map configuration object or null if no route data
+   */
   const getMapData = () => {
     if (!generatedTrip?.route?.coordinates || generatedTrip.route.coordinates.length === 0) {
       return null;
@@ -506,7 +537,7 @@ const PlanTrip = () => {
     const coordinates = generatedTrip.route.coordinates;
     const center = coordinates[0];
     
-    // קבוצת קואורדינטות לפוליליין
+    // Prepare coordinate array for polyline display
     const polylinePositions = coordinates.map(coord => [coord.lat, coord.lng]);
     
     return {
@@ -530,7 +561,7 @@ const PlanTrip = () => {
       </div>
 
       <div className="row">
-        {/* טופס יצירת מסלול */}
+        {/* Trip Generation Form */}
         <div className="col-lg-4 mb-4">
           <div className="card shadow">
             <div className="card-header bg-primary text-white">
@@ -554,7 +585,7 @@ const PlanTrip = () => {
                 </div>
               )}
 
-              {/* הודעה אם המשתמש לא מחובר */}
+              {/* User authentication status */}
               {!user && (
                 <div className="alert alert-info">
                   <i className="fas fa-info-circle me-2"></i>
@@ -714,7 +745,7 @@ const PlanTrip = () => {
             </div>
           </div>
 
-          {/* פרטי המשתמש */}
+          {/* User Information Panel */}
           {user && (
             <div className="card shadow mt-3">
               <div className="card-header bg-info text-white">
@@ -734,11 +765,11 @@ const PlanTrip = () => {
             </div>
           )}
 
-          {/* 🖼️ תמונת המיקום */}
+          {/* Location Image Display */}
           <LocationImage />
         </div>
 
-        {/* תצוגת המסלול */}
+        {/* Trip Route Display */}
         <div className="col-lg-8">
           {!generatedTrip ? (
             <div className="card shadow">
@@ -750,7 +781,7 @@ const PlanTrip = () => {
             </div>
           ) : (
             <>
-              {/* פרטי המסלול */}
+              {/* Route Details Panel */}
               <div className="card shadow mb-4">
                 <div className="card-header bg-success text-white">
                   <h5 className="mb-0">
@@ -780,7 +811,7 @@ const PlanTrip = () => {
                     </div>
                   </div>
                   
-                  {/* נקודות עניין */}
+                  {/* Points of Interest Display */}
                   {generatedTrip.pointsOfInterest && generatedTrip.pointsOfInterest.length > 0 && (
                     <div className="mt-3">
                       <h6 className="text-primary">
@@ -818,7 +849,7 @@ const PlanTrip = () => {
                 </div>
               </div>
 
-              {/* המפה */}
+              {/* Interactive Route Map */}
               <div className="card shadow mb-4">
                 <div className="card-header bg-info text-white">
                   <h5 className="mb-0">
@@ -841,7 +872,7 @@ const PlanTrip = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing by <a href="https://openrouteservice.org">OpenRouteService</a>'
                       />
                       
-                      {/* הצגת המסלול */}
+                      {/* Route polyline with trip type specific color */}
                       <Polyline
                         positions={mapData.polylinePositions}
                         color={generatedTrip.tripType === 'cycling' ? '#007bff' : '#28a745'}
@@ -849,7 +880,7 @@ const PlanTrip = () => {
                         opacity={0.8}
                       />
                       
-                      {/* סמנים לנקודות חשובות */}
+                      {/* Start and end point markers */}
                       {mapData.coordinates
                         .filter((_, index) => index === 0 || index === mapData.coordinates.length - 1)
                         .map((coord, index) => (
@@ -865,7 +896,7 @@ const PlanTrip = () => {
                         ))
                       }
                       
-                      {/* סמנים לנקודות עניין */}
+                      {/* Points of interest markers */}
                       {generatedTrip.pointsOfInterest?.map((poi, index) => (
                         <Marker key={`poi-${index}`} position={[poi.coordinates.lat, poi.coordinates.lng]}>
                           <Popup>
@@ -887,7 +918,7 @@ const PlanTrip = () => {
                 </div>
               </div>
 
-              {/* פירוט ימים */}
+              {/* Daily Route Breakdown */}
               <div className="card shadow">
                 <div className="card-header bg-warning text-dark">
                   <h5 className="mb-0">
@@ -944,8 +975,6 @@ const PlanTrip = () => {
           )}
         </div>
       </div>
-
-      {/* אין צורך יותר ב-Modal כי יש רק תמונה אחת */}
     </div>
   );
 };

@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
+/**
+ * Weather Component
+ * 
+ * Comprehensive weather dashboard that displays current weather conditions,
+ * 3-day detailed forecast, and weekly forecast. Features city search,
+ * automatic location detection, and fallback to demo data.
+ * 
+ * @component
+ * @returns {JSX.Element} Weather dashboard with multiple forecast views
+ */
 const Weather = () => {
   const [currentWeather, setCurrentWeather] = useState(null);
   const [threeDayForecast, setThreeDayForecast] = useState(null);
@@ -9,11 +19,16 @@ const Weather = () => {
   const [searchCity, setSearchCity] = useState('תל אביב');
   const [currentCity, setCurrentCity] = useState('תל אביב');
 
-  // משתמש ב-API key מהשרת דרך endpoint מיוחד
   const BASE_URL = 'https://api.openweathermap.org/data/2.5';
-  const API_KEY = 'e8928d43559be6947280868e1e6be6f9'; // מה-.env שלך
+  const API_KEY = 'e8928d43559be6947280868e1e6be6f9';
 
-  // פונקציה לקבלת מזג אוויר נוכחי
+  /**
+   * Fetches current weather data for specified city
+   * 
+   * @param {string} city - City name to fetch weather for
+   * @returns {Promise<Object>} Current weather data from OpenWeatherMap API
+   * @throws {Error} When city is not found or API request fails
+   */
   const fetchCurrentWeather = async (city) => {
     try {
       const response = await fetch(
@@ -31,7 +46,13 @@ const Weather = () => {
     }
   };
 
-  // פונקציה לקבלת תחזית 5 ימים
+  /**
+   * Fetches 5-day weather forecast for specified city
+   * 
+   * @param {string} city - City name to fetch forecast for
+   * @returns {Promise<Object>} 5-day forecast data from OpenWeatherMap API
+   * @throws {Error} When forecast is not available or API request fails
+   */
   const fetchForecast = async (city) => {
     try {
       const response = await fetch(
@@ -49,7 +70,13 @@ const Weather = () => {
     }
   };
 
-  // עיבוד תחזית 3 ימים מנתוני 5 ימים
+  /**
+   * Processes 5-day forecast data into 3-day summary
+   * Groups forecast data by date and calculates daily min/max temperatures
+   * 
+   * @param {Object} forecastData - Raw 5-day forecast data from API
+   * @returns {Array} Array of 3 daily forecast objects with aggregated data
+   */
   const process3DayForecast = (forecastData) => {
     const dailyData = {};
     const today = new Date();
@@ -59,7 +86,7 @@ const Weather = () => {
       const date = new Date(item.dt * 1000);
       const dateKey = date.toISOString().split('T')[0];
       
-      // רק ימים עתידיים (לא היום)
+      // Only include future days (not today)
       if (date >= today) {
         if (!dailyData[dateKey]) {
           dailyData[dateKey] = {
@@ -91,7 +118,13 @@ const Weather = () => {
     }));
   };
 
-  // עיבוד תחזית שבועית מנתוני 5 ימים
+  /**
+   * Processes 5-day forecast data into weekly summary
+   * Groups forecast data by date and calculates daily aggregates
+   * 
+   * @param {Object} forecastData - Raw 5-day forecast data from API
+   * @returns {Array} Array of daily forecast objects for the week
+   */
   const processWeeklyForecast = (forecastData) => {
     const dailyData = {};
     
@@ -115,7 +148,7 @@ const Weather = () => {
       dailyData[dateKey].wind.push(item.wind.speed);
     });
 
-    return Object.values(dailyData).slice(1, 8).map(day => ({ // דלג על היום הראשון
+    return Object.values(dailyData).slice(1, 8).map(day => ({
       date: day.date,
       maxTemp: Math.round(Math.max(...day.temps)),
       minTemp: Math.round(Math.min(...day.temps)),
@@ -125,13 +158,18 @@ const Weather = () => {
     }));
   };
 
-  // טעינת נתוני מזג אוויר
+  /**
+   * Main function to load weather data for a city
+   * Handles both real API calls and fallback to demo data
+   * 
+   * @param {string} city - City name to load weather data for
+   */
   const loadWeatherData = async (city) => {
     setLoading(true);
     setError(null);
     
     try {
-      // אם יש בעיה עם API, השתמש בנתונים דמה
+      // Fallback to demo data if API key is not available
       if (API_KEY === 'demo_key' || !API_KEY) {
         setTimeout(() => {
           setCurrentWeather(getDemoCurrentWeather(city));
@@ -143,7 +181,7 @@ const Weather = () => {
         return;
       }
 
-      // קריאת API אמיתית
+      // Real API calls
       const [currentData, forecastData] = await Promise.all([
         fetchCurrentWeather(city),
         fetchForecast(city)
@@ -161,7 +199,7 @@ const Weather = () => {
     }
   };
 
-  // נתוני דמה לפיתוח
+  // Demo data generators for development/fallback
   const getDemoCurrentWeather = (city) => ({
     name: city,
     main: {
@@ -183,22 +221,18 @@ const Weather = () => {
     }
   });
 
-  const getDemoForecast = () => [
-    { dt: Date.now() + 10800000, main: { temp: 26 }, weather: [{ description: 'מעונן חלקית', icon: '02d' }] },
-    { dt: Date.now() + 21600000, main: { temp: 24 }, weather: [{ description: 'מעונן', icon: '03d' }] },
-    { dt: Date.now() + 32400000, main: { temp: 29 }, weather: [{ description: 'שמש', icon: '01d' }] },
-    { dt: Date.now() + 43200000, main: { temp: 31 }, weather: [{ description: 'שמש', icon: '01d' }] },
-    { dt: Date.now() + 86400000, main: { temp: 27 }, weather: [{ description: 'מעונן חלקית', icon: '02d' }] },
-    { dt: Date.now() + 172800000, main: { temp: 25 }, weather: [{ description: 'גשום', icon: '10d' }] }
+  const getDemo3DayForecast = () => [
+    { date: new Date(Date.now() + 86400000), maxTemp: 26, minTemp: 18, condition: 'מעונן חלקית', humidity: 60, windSpeed: 5 },
+    { date: new Date(Date.now() + 172800000), maxTemp: 24, minTemp: 16, condition: 'מעונן', humidity: 70, windSpeed: 8 },
+    { date: new Date(Date.now() + 259200000), maxTemp: 29, minTemp: 20, condition: 'שמש', humidity: 55, windSpeed: 3 }
   ];
 
   const getDemoWeeklyForecast = () => {
-    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const today = new Date();
     
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(today);
-      date.setDate(today.getDate() + i);
+      date.setDate(today.getDate() + i + 1);
       
       return {
         date,
@@ -211,12 +245,11 @@ const Weather = () => {
     });
   };
 
-  // טעינה ראשונית
+  // Initial data load
   useEffect(() => {
     loadWeatherData(currentCity);
   }, []);
 
-  // חיפוש עיר חדשה
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchCity.trim()) {
@@ -224,7 +257,10 @@ const Weather = () => {
     }
   };
 
-  // זיהוי מיקום אוטומטי
+  /**
+   * Gets user's current location and fetches weather data
+   * Falls back to Tel Aviv if geolocation fails or is denied
+   */
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       setLoading(true);
@@ -314,7 +350,7 @@ const Weather = () => {
             מזג אוויר
           </h2>
 
-          {/* חיפוש עיר */}
+          {/* City Search */}
           <div className="card mb-4">
             <div className="card-body">
               <form onSubmit={handleSearch} className="d-flex gap-2">
@@ -340,7 +376,7 @@ const Weather = () => {
             </div>
           </div>
 
-          {/* מזג אוויר נוכחי */}
+          {/* Current Weather Display */}
           {currentWeather && (
             <div className="card mb-4 shadow">
               <div className="card-header bg-primary text-white">
@@ -401,7 +437,7 @@ const Weather = () => {
             </div>
           )}
 
-          {/* תחזית 3 ימים */}
+          {/* 3-Day Detailed Forecast */}
           {threeDayForecast && (
             <div className="card mb-4">
               <div className="card-header">
@@ -449,7 +485,7 @@ const Weather = () => {
             </div>
           )}
 
-          {/* תחזית שבועית */}
+          {/* Weekly Forecast */}
           {weeklyForecast && (
             <div className="card">
               <div className="card-header">
@@ -490,7 +526,7 @@ const Weather = () => {
             </div>
           )}
 
-          {/* הודעה על API */}
+          {/* API Demo Mode Notice */}
           {!API_KEY && (
             <div className="alert alert-warning mt-4" role="alert">
               <i className="fas fa-exclamation-triangle me-2"></i>

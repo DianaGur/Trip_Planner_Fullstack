@@ -6,7 +6,7 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  // אם עדיין טוען, הצג spinner
+  // Loading animation while checking authentication
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -22,13 +22,13 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // אם לא מחובר, הפנה להתחברות
+  // If the user is not authenticated, redirect to login
   if (!isAuthenticated) {
-    // שמור את הדף שניסה לגשת אליו כדי להפנות אליו אחרי התחברות
+    // Store the current location to redirect back after login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // אם מחובר, הצג את הרכיב
+  // If authenticated, render the protected children components
   return children;
 };
 

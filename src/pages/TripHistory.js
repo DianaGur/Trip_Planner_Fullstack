@@ -3,16 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
+/**
+ * TripHistory Component
+ * 
+ * Displays user's trip history with comprehensive statistics and management capabilities.
+ * Features include viewing trip details, deleting trips, and displaying user statistics.
+ * 
+ * @component
+ * @returns {JSX.Element} Trip history dashboard with stats and trip cards
+ */
 const TripHistory = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   
-  const [trips, setTrips] = useState([]); // 🔧 ודא שזה array
+  const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
 
-  // טעינת הטיולים מהשרת
+  /**
+   * Fetches user's trips and statistics from the server
+   * Ensures data integrity by validating response format and handling errors gracefully
+   */
   useEffect(() => {
     const fetchTrips = async () => {
       try {
@@ -22,7 +34,7 @@ const TripHistory = () => {
         const response = await axios.get('/api/trips');
         
         if (response.data.success) {
-          // 🔧 ודא שה-data הוא array
+          // Ensure trips data is always an array to prevent rendering errors
           const tripsData = Array.isArray(response.data.data) ? response.data.data : [];
           setTrips(tripsData);
           setStats(response.data.userStats);
@@ -35,7 +47,7 @@ const TripHistory = () => {
       } catch (error) {
         console.error('❌ Error fetching trips:', error);
         setError('שגיאה בטעינת הטיולים. אנא נסה שוב.');
-        setTrips([]); // 🔧 ודא שזה array גם במקרה של שגיאה
+        setTrips([]); // Ensure array format even on error
       } finally {
         setLoading(false);
       }
@@ -46,7 +58,13 @@ const TripHistory = () => {
     }
   }, [user]);
 
-  // מחיקת טיול
+  /**
+   * Handles trip deletion with user confirmation
+   * Updates the trips list immediately upon successful deletion
+   * 
+   * @param {string} tripId - Unique identifier of the trip to delete
+   * @param {string} tripName - Name of the trip for confirmation dialog
+   */
   const handleDeleteTrip = async (tripId, tripName) => {
     const confirmDelete = window.confirm(`האם אתה בטוח שברצונך למחוק את הטיול "${tripName}"?`);
     if (!confirmDelete) return;
@@ -55,7 +73,7 @@ const TripHistory = () => {
       const response = await axios.delete(`/api/trips/${tripId}`);
       
       if (response.data.success) {
-        // הסר את הטיול מהרשימה
+        // Remove trip from local state to update UI immediately
         setTrips(prevTrips => prevTrips.filter(trip => trip._id !== tripId));
         alert('הטיול נמחק בהצלחה');
       } else {
@@ -100,7 +118,7 @@ const TripHistory = () => {
 
   return (
     <div className="container mt-4">
-      {/* כותרת */}
+      {/* Header Section */}
       <div className="row mb-4">
         <div className="col-12">
           <h1 className="mb-3">
@@ -115,7 +133,7 @@ const TripHistory = () => {
         </div>
       </div>
 
-      {/* סטטיסטיקות */}
+      {/* Statistics Dashboard */}
       {stats && (
         <div className="row mb-4">
           <div className="col-12">
@@ -163,10 +181,10 @@ const TripHistory = () => {
         </div>
       )}
 
-      {/* רשימת הטיולים */}
+      {/* Trips List Section */}
       <div className="row">
         <div className="col-12">
-          {/* 🔧 בדיקה בטוחה של trips */}
+          {/* Data validation check - ensures trips is always an array */}
           {!Array.isArray(trips) ? (
             <div className="alert alert-warning">
               <h4>בעיה בטעינת הנתונים</h4>
@@ -195,7 +213,7 @@ const TripHistory = () => {
             </div>
           ) : (
             <>
-              {/* כותרת רשימה */}
+              {/* Trips List Header */}
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h4>הטיולים שלך ({trips.length})</h4>
                 <button 
@@ -207,7 +225,7 @@ const TripHistory = () => {
                 </button>
               </div>
 
-              {/* גריד הטיולים */}
+              {/* Trips Grid */}
               <div className="row">
                 {trips.map((trip, index) => (
                   <div key={trip._id || index} className="col-md-6 col-lg-4 mb-4">
@@ -222,7 +240,7 @@ const TripHistory = () => {
                           {trip.city || 'עיר לא זמינה'}, {trip.country || 'מדינה לא זמינה'}
                         </p>
                         
-                        {/* סטטיסטיקות הטיול */}
+                        {/* Trip Statistics */}
                         <div className="row text-center mb-3">
                           <div className="col-4">
                             <small className="text-muted">ימים</small>
@@ -240,7 +258,7 @@ const TripHistory = () => {
                           </div>
                         </div>
                         
-                        {/* סטטוס ופעולות */}
+                        {/* Status and Actions */}
                         <div className="d-flex justify-content-between align-items-center">
                           <div>
                             <span className={`badge ${

@@ -19,7 +19,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
   const [mapReady, setMapReady] = useState(false);
   const routeLayersRef = useRef([]);
 
-  // אתחול המפה
+  // intial map setup
   useEffect(() => {
     if (!mapRef.current || !route || !route.coordinates) return;
 
@@ -40,7 +40,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     };
   }, [route]);
 
-  // עדכון התצוגה כשמשנים יום
+  // update map when selected day changes or map is ready
   useEffect(() => {
     if (mapReady && mapInstanceRef.current) {
       updateMapDisplay();
@@ -53,12 +53,12 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
         mapInstanceRef.current.remove();
       }
 
-      // חישוב מרכז המפה מכל הקואורדינטות
+      // Calculate the center of the map based on route coordinates
       const center = calculateMapCenter(route.coordinates);
       
       console.log('🎯 Map center calculated:', center);
 
-      // יצירת המפה
+      // map initialization
       const map = L.map(mapRef.current, {
         center: [center.lat, center.lng],
         zoom: 13,
@@ -66,7 +66,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
         attributionControl: true
       });
 
-      // הוספת tiles של OpenStreetMap
+      // Add OpenStreetMap tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Route by <a href="https://openrouteservice.org">OpenRouteService</a>',
         maxZoom: 18
@@ -86,22 +86,22 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     console.log(`🔄 Updating map display for day: ${selectedDay}`);
     setIsLoading(true);
     
-    // ניקוי שכבות קיימות
+    // Clear previous layers
     clearMapLayers();
 
     try {
-      // קבלת קואורדינטות לפי היום הנבחר
+      // Filter coordinates based on selected day
       const filteredCoordinates = getFilteredCoordinates();
       
       console.log(`📍 Filtered coordinates: ${filteredCoordinates.length} points`);
 
       if (filteredCoordinates.length > 0) {
-        // ✨ כאן השינוי המרכזי - נצייר את כל הנקודות כפוליליין
+        // Display the route on the map 
         displayDetailedRoute(filteredCoordinates);
         addRouteMarkers(filteredCoordinates);
         addPointsOfInterest();
         
-        // התאמת המפה למסלול
+        // Fit map to the coordinates
         fitMapToCoordinates(filteredCoordinates);
       }
 
@@ -114,7 +114,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
   };
 
   const clearMapLayers = () => {
-    // הסר את כל השכבות הקיימות
+    // Clear all route layers
     routeLayersRef.current.forEach(layer => {
       if (mapInstanceRef.current.hasLayer(layer)) {
         mapInstanceRef.current.removeLayer(layer);
@@ -122,7 +122,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     });
     routeLayersRef.current = [];
 
-    // הסר גם markers וpopups
+    // Clear markers and polylines
     mapInstanceRef.current.eachLayer((layer) => {
       if (layer instanceof L.Marker || layer instanceof L.Polyline) {
         mapInstanceRef.current.removeLayer(layer);
@@ -137,19 +137,18 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     return route.coordinates.filter(coord => coord.day === parseInt(selectedDay));
   };
 
-  // 🎯 הפונקציה החדשה - מציירת את המסלול המפורט
+  // Display the detailed route on the map
   const displayDetailedRoute = (coordinates) => {
     if (coordinates.length < 2) return;
 
     console.log(`🎨 Drawing detailed route with ${coordinates.length} coordinates`);
 
-    // קבוצת קואורדינטות לפוליליין
+    // 
     const latLngs = coordinates.map(coord => [coord.lat, coord.lng]);
     
-    // צבע לפי סוג הטיול
     const routeColor = tripType === 'cycling' ? '#007bff' : '#28a745';
     
-    // אפשרויות הפוליליין
+    // Create polyline options
     const polylineOptions = {
       color: routeColor,
       weight: 4,
@@ -159,24 +158,21 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
       lineCap: 'round'
     };
 
-    // יצירת הפוליליין
     const polyline = L.polyline(latLngs, polylineOptions);
     
-    // הוספה למפה ושמירה לניקוי עתידי
     polyline.addTo(mapInstanceRef.current);
     routeLayersRef.current.push(polyline);
 
-    // הוספת popup עם מידע
     const routeInfo = getRouteInfo(coordinates);
     polyline.bindPopup(routeInfo);
 
-    console.log('✅ Detailed route drawn successfully');
+    console.log(' Detailed route drawn successfully');
   };
 
   const addRouteMarkers = (coordinates) => {
     if (coordinates.length === 0) return;
 
-    console.log(`📌 Adding markers for ${coordinates.length} coordinates`);
+    console.log(` Adding markers for ${coordinates.length} coordinates`);
 
     // אייקונים מותאמים
     const startIcon = createCustomIcon('#28a745', 'S', 'start-marker');
@@ -190,7 +186,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     
     routeLayersRef.current.push(startMarker);
 
-    // נקודת סיום (אם שונה מנקודת ההתחלה)
+    // if the last coordinate is not the same as the first, add an end marker
     const endCoord = coordinates[coordinates.length - 1];
     if (endCoord.lat !== startCoord.lat || endCoord.lng !== startCoord.lng) {
       const endMarker = L.marker([endCoord.lat, endCoord.lng], { icon: endIcon })
@@ -200,7 +196,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
       routeLayersRef.current.push(endMarker);
     }
 
-    // נקודות ביניים (כל 10 נקודות או מקסימום 5 נקודות)
+    // Add waypoints at regular intervals
     const waypointInterval = Math.max(Math.floor(coordinates.length / 5), 10);
     const waypointIcon = createCustomIcon('#ffc107', '•', 'waypoint-marker');
 
@@ -213,7 +209,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
       routeLayersRef.current.push(waypointMarker);
     }
 
-    console.log(`✅ Added ${routeLayersRef.current.length} markers`);
+    console.log(` Added ${routeLayersRef.current.length} markers`);
   };
 
   const createCustomIcon = (color, text, className) => {
@@ -238,6 +234,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     });
   };
 
+  // Create a popup for markers
   const createMarkerPopup = (title, coord, type) => {
     return `
       <div style="direction: rtl; text-align: right; min-width: 150px;">
@@ -250,6 +247,8 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
     `;
   };
 
+  // Add points of interest to the map
+  // This function assumes route.pointsOfInterest is an array of POI objects
   const addPointsOfInterest = () => {
     if (!route.pointsOfInterest) return;
 
@@ -257,7 +256,7 @@ const RouteMap = ({ route, tripType, height = '500px', showControls = true }) =>
       ? route.pointsOfInterest 
       : route.pointsOfInterest.filter(poi => poi.day === parseInt(selectedDay));
 
-    console.log(`🎯 Adding ${poisToShow.length} points of interest`);
+    console.log(` Adding ${poisToShow.length} points of interest`);
 
     const poiIcon = createCustomIcon('#17a2b8', 'POI', 'poi-marker');
 

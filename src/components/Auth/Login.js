@@ -55,12 +55,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('🔐 Attempting login...');
+      console.log(' Attempting login...');
       const result = await login(formData.email, formData.password);
 
       if (result.success) {
         setSuccess(result.message);
-        console.log('✅ Login successful, redirecting...');
+        console.log(' Login successful, redirecting...');
         
         // Short delay to show success message
         setTimeout(() => {
@@ -70,7 +70,7 @@ const Login = () => {
         setError(result.message);
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error('=======Login error:=========', error);
       setError('שגיאה בהתחברות. אנא נסה שוב.');
     } finally {
       setLoading(false);

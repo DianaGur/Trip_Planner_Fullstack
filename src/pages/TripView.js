@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// תיקון אייקונים של Leaflet
+// Fix Leaflet default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -14,8 +14,17 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * TripView Component
+ * 
+ * Displays detailed view of a single trip including route map, statistics, 
+ * daily breakdown, and points of interest. Supports trip deletion for authorized users.
+ * 
+ * @component
+ * @returns {JSX.Element} Detailed trip view with interactive map and comprehensive trip data
+ */
 const TripView = () => {
-  const { id } = useParams(); // קבלת ID מה-URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   
@@ -23,7 +32,10 @@ const TripView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // טעינת הטיול מהשרת
+  /**
+   * Fetches trip data from server with comprehensive error handling
+   * Handles various error scenarios including 404 (not found) and 401 (unauthorized)
+   */
   useEffect(() => {
     const fetchTrip = async () => {
       if (!id) {
@@ -63,7 +75,10 @@ const TripView = () => {
     fetchTrip();
   }, [id]);
 
-  // מחיקת טיול
+  /**
+   * Handles trip deletion with user confirmation
+   * Only available to trip owner. Redirects to dashboard upon successful deletion.
+   */
   const handleDeleteTrip = async () => {
     if (!trip) return;
     
@@ -77,7 +92,7 @@ const TripView = () => {
       
       if (response.data.success) {
         alert('הטיול נמחק בהצלחה');
-        navigate('/dashboard'); // חזרה לדשבורד
+        navigate('/dashboard');
       } else {
         throw new Error('שגיאה במחיקת הטיול');
       }
@@ -90,7 +105,12 @@ const TripView = () => {
     }
   };
 
-  // הכנת נתוני המפה
+  /**
+   * Prepares map data for visualization
+   * Extracts coordinates and calculates center point for map display
+   * 
+   * @returns {Object|null} Map configuration object or null if no route data
+   */
   const getMapData = () => {
     if (!trip?.route?.coordinates || trip.route.coordinates.length === 0) {
       return null;
@@ -99,7 +119,7 @@ const TripView = () => {
     const coordinates = trip.route.coordinates;
     const center = coordinates[0];
     
-    // קבוצת קואורדינטות לפוליליין
+    // Prepare coordinate array for polyline display
     const polylinePositions = coordinates.map(coord => [coord.lat, coord.lng]);
     
     return {
@@ -109,7 +129,11 @@ const TripView = () => {
     };
   };
 
-  // חישוב ממוצע יומי
+  /**
+   * Calculates daily distance average for the trip
+   * 
+   * @returns {number} Average kilometers per day, rounded to 2 decimal places
+   */
   const calculateDailyAverage = () => {
     if (!trip?.route?.totalDistance || !trip?.route?.totalDays) {
       return 0;
@@ -168,7 +192,7 @@ const TripView = () => {
 
   return (
     <div className="container mt-4">
-      {/* כותרת וכפתורי פעולה */}
+      {/* Header and Action Buttons */}
       <div className="row mb-4">
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center">
@@ -212,7 +236,7 @@ const TripView = () => {
         </div>
       </div>
 
-      {/* מידע כללי על הטיול */}
+      {/* Trip General Information */}
       <div className="row mb-4">
         <div className="col-md-8">
           <div className="card shadow">
@@ -274,7 +298,7 @@ const TripView = () => {
         </div>
       </div>
 
-      {/* המפה */}
+      {/* Interactive Route Map */}
       <div className="row mb-4">
         <div className="col-12">
           <div className="card shadow">
@@ -301,7 +325,7 @@ const TripView = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   
-                  {/* הצגת המסלול */}
+                  {/* Route polyline with color based on trip type */}
                   <Polyline
                     positions={mapData.polylinePositions}
                     color={trip.tripType === 'cycling' ? '#007bff' : '#28a745'}
@@ -309,7 +333,7 @@ const TripView = () => {
                     opacity={0.8}
                   />
                   
-                  {/* סמנים לנקודות התחלה וסיום */}
+                  {/* Start and end point markers */}
                   {mapData.coordinates
                     .filter((_, index) => index === 0 || index === mapData.coordinates.length - 1)
                     .map((coord, index) => (
@@ -325,7 +349,7 @@ const TripView = () => {
                     ))
                   }
                   
-                  {/* סמנים לנקודות עניין */}
+                  {/* Points of interest markers */}
                   {trip.pointsOfInterest?.map((poi, index) => (
                     <Marker key={`poi-${index}`} position={[poi.coordinates.lat, poi.coordinates.lng]}>
                       <Popup>
@@ -349,7 +373,7 @@ const TripView = () => {
         </div>
       </div>
 
-      {/* פירוט ימים */}
+      {/* Daily Route Breakdown */}
       {trip.route?.dailyRoutes && trip.route.dailyRoutes.length > 0 && (
         <div className="row mb-4">
           <div className="col-12">
@@ -395,7 +419,7 @@ const TripView = () => {
                       </div>
                     </div>
                     
-                    {/* נקודות עניין ליום */}
+                    {/* Daily points of interest */}
                     {day.pointsOfInterest && day.pointsOfInterest.length > 0 && (
                       <div className="mt-2">
                         <small className="text-muted">נקודות עניין:</small>
@@ -416,7 +440,7 @@ const TripView = () => {
         </div>
       )}
 
-      {/* נקודות עניין כלליות */}
+      {/* General Points of Interest */}
       {trip.pointsOfInterest && trip.pointsOfInterest.length > 0 && (
         <div className="row mb-4">
           <div className="col-12">

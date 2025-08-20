@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
+/**
+ * Dashboard Component
+ * 
+ * Main user dashboard displaying trip statistics, recent trips, and quick actions.
+ * Provides navigation to key features including trip planning, history, and weather data.
+ * Features comprehensive user statistics and recent trip activity overview.
+ */
 const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
@@ -16,42 +23,56 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // טעינת סטטיסטיקות בעליית הרכיב
+  // Fetch stats when component mounts
   useEffect(() => {
     fetchUserStats();
   }, []);
 
+  /**
+   * Fetches comprehensive user statistics from the server
+   * Includes trip counts, distance totals, and recent trip activity
+   */
   const fetchUserStats = async () => {
     try {
       setLoading(true);
-      console.log('📊 Fetching user statistics...');
+      console.log('Fetching user statistics...');
       
       const response = await axios.get('/api/trips/stats');
       
       if (response.data.success) {
         setStats(response.data.stats);
         setRecentTrips(response.data.recentTrips || []);
-        console.log('✅ Stats loaded:', response.data.stats);
+        console.log('Stats loaded:', response.data.stats);
       } else {
         throw new Error('Failed to fetch stats');
       }
       
     } catch (error) {
-      console.error('❌ Error fetching stats:', error);
+      console.error('Error fetching stats:', error);
       setError('שגיאה בטעינת הסטטיסטיקות');
     } finally {
       setLoading(false);
     }
   };
 
-  // פורמט מספרים לתצוגה יפה
+  /**
+   * Formats numbers for display with K notation for thousands
+   * 
+   * @param {number} num - Number to format
+   * @returns {string} Formatted number string
+   */
   const formatNumber = (num) => {
     if (num === 0) return '0';
     if (num < 1000) return num.toString();
     return (num / 1000).toFixed(1) + 'K';
   };
 
-  // פורמט תאריך
+  /**
+   * Formats date to Hebrew locale
+   * 
+   * @param {string} dateString - ISO date string
+   * @returns {string} Formatted date in Hebrew locale
+   */
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL', {
@@ -73,7 +94,7 @@ const Dashboard = () => {
                 ברוך הבא, {user?.name}!
               </h1>
               <p className="lead mb-0">
-                מוכן לתכנן את הטיול הבא שלך? בוא נתחיל!
+                מוכן לתכנן את הטיול הבא שלך? בואו נתחיל!
               </p>
             </div>
           </div>
@@ -129,20 +150,20 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Profile */}
+        {/* Weather Data - Updated Card */}
         <div className="col-md-6 col-lg-4">
           <div className="card h-100 border-0 shadow-sm hover-shadow">
             <div className="card-body text-center p-4">
               <div className="mb-3">
-                <i className="fas fa-user-cog fa-3x text-info"></i>
+                <i className="fas fa-cloud-sun fa-3x text-warning"></i>
               </div>
-              <h5 className="card-title">ניהול פרופיל</h5>
+              <h5 className="card-title">מזג אוויר</h5>
               <p className="card-text text-muted">
-                עדכן את הפרטים האישיים שלך והגדרות החשבון
+                בדוק תחזיות מזג אוויר עדכניות לתכנון הטיול הבא
               </p>
-              <Link to="/profile" className="btn btn-info btn-lg">
-                <i className="fas fa-cog me-2"></i>
-                עדכן פרופיל
+              <Link to="/weather" className="btn btn-warning btn-lg">
+                <i className="fas fa-thermometer-half me-2"></i>
+                צפה במזג אוויר
               </Link>
             </div>
           </div>

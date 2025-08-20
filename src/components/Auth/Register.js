@@ -67,7 +67,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      console.log('📝 Attempting registration...');
+      console.log(' Attempting registration...');
       const result = await register(
         formData.name, 
         formData.email, 
@@ -77,7 +77,7 @@ const Register = () => {
 
       if (result.success) {
         setSuccess(result.message);
-        console.log('✅ Registration successful, redirecting...');
+        console.log(' Registration successful, redirecting...');
         
         // Short delay to show success message
         setTimeout(() => {
@@ -87,13 +87,14 @@ const Register = () => {
         setError(result.message);
       }
     } catch (error) {
-      console.error('❌ Registration error:', error);
+      console.error(' ========Registration erro:========', error);
       setError('שגיאה בהרשמה. אנא נסה שוב.');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // render the registration form
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
