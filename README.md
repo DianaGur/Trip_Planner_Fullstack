@@ -1,70 +1,187 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Trip Planner (Web) — Smart Itinerary Builder 🌍🗺️
 
-## Available Scripts
+A full‑stack web app that helps users generate city trips with points of interest, routes, maps, weather, and personal trip history.  
+Built with **React** (frontend) and **Node.js/Express + MongoDB** (backend) with **JWT** authentication.
 
-In the project directory, you can run:
+> **Note on declared limitations** (for transparency and grading):  
+> • Without real API keys (GROQ / OPENROUTE / OPENWEATHER / PIXABAY) some features run in **demo** mode.  
+> • `/api/trips` and `/api/images` are **JWT‑protected**; unauthenticated requests return **401**.  
+> • No `docker-compose` or automated tests yet (run client & server separately).  
+> • Leaflet map icons are loaded from a CDN; **offline** usage requires hosting icons locally.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Table of Contents
+- [Features](#features)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Data Model (Trip)](#data-model-trip)
+- [Security & Rate Limiting](#security--rate-limiting)
+- [Project Structure](#project-structure)
+- [Development Tips](#development-tips)
+- [Known Issues](#known-issues)
+- [Future Work](#future-work)
+- [License](#license)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Features
+- ✨ **AI‑assisted trip generation** (city, trip type, days) with balanced points of interest (POIs).  
+- 🗺️ **Interactive map** using Leaflet: route polyline, POI markers, popups and descriptions.  
+- 🌦️ **Weather forecast** (OpenWeather) for the generated trip region.  
+- 🖼️ **Location cover image** (Pixabay) using AI‑inferred keywords.  
+- 👤 **User accounts**: register, login (JWT), update profile, change password.  
+- 💾 **Save trips & history** per user with stats.  
+- 🚦 **Basic rate limiting** on sensitive endpoints.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## Architecture
+**Frontend (client):** React, React‑Bootstrap, Leaflet, Axios  
+**Backend (server):** Express, Mongoose/MongoDB, JWT, dotenv, bcryptjs, axios  
+**External services (optional):** Groq (POI suggestions), OpenRoute/Mapbox (routing), OpenWeather (forecast), Pixabay (images)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**High‑level flow:**  
+User fills *city / tripType / days* → (optional) AI proposes balanced POIs → (optional) OpenRoute/Mapbox builds routes → OpenWeather adds forecast → Pixabay fetches a cover image → user saves the trip to MongoDB.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Quick Start
+### Prerequisites
+- Node.js 18+ and npm
+- MongoDB (local or Atlas)
+- (Optional) API keys if you want **real** routes, weather, and images
 
-### `npm run eject`
+### Backend
+```bash
+cd server
+npm install
+npm run dev         # nodemon server.js (default PORT=5000)
+```
+Create `server/.env` (see below).
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Frontend
+```bash
+cd client
+npm install
+npm start           # React dev server on http://localhost:3000
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+> Ensure `CLIENT_URL` in your backend `.env` matches your frontend origin; CORS is enabled on the server.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Environment Variables
+Create `server/.env` with at least:
+```
+MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>/<db>
+JWT_SECRET=change_me
+CLIENT_URL=http://localhost:3000
+PORT=5000
+```
+Optional (enables real integrations; otherwise **demo/mocks** are used):
+```
+GROQ_API_KEY=...
+OPENROUTE_API_KEY=...
+OPENWEATHER_API_KEY=...
+PIXABAY_API_KEY=...
+```
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## API Reference
+### Auth (`/api/auth`)
+| Method | Path            | Auth | Description                |
+|-------:|-----------------|:----:|----------------------------|
+| POST   | `/register`     |  —   | Register a new user        |
+| POST   | `/login`        |  —   | Login and receive a JWT    |
+| GET    | `/me`           | JWT  | Get current user profile   |
+| PUT    | `/me`           | JWT  | Update profile             |
+| PUT    | `/password`     | JWT  | Change password            |
+| POST   | `/logout`       | JWT  | Logout (if implemented)    |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Trips (`/api/trips`)
+| Method | Path                 | Auth | Description                           |
+|-------:|----------------------|:----:|---------------------------------------|
+| POST   | `/generate`          | JWT  | Generate a new trip (AI + routing)    |
+| GET    | `/stats`             | JWT  | User trip statistics                  |
+| GET    | `/`                  | JWT  | List current user's trips             |
+| POST   | `/`                  | JWT  | Save a trip                           |
+| GET    | `/:id`               | JWT  | Get a trip by id                      |
+| PUT    | `/:id`               | JWT  | Update a trip                         |
+| DELETE | `/:id`               | JWT  | Delete a trip                         |
 
-### Code Splitting
+### Images (`/api/images`)
+| Method | Path                                         | Auth | Description                     |
+|-------:|----------------------------------------------|:----:|---------------------------------|
+| GET    | `/location/:city/:country?`                  | JWT  | Get a representative cover image|
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+**Auth header:** `Authorization: Bearer <JWT>`
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Data Model (Trip)
+The `Trip` document (Mongoose) includes:
+- **meta**: `city`, `tripType` (`hiking`, `cycling`, `driving`, `walking`, …), `days`
+- **pointsOfInterest[]**: `name`, `description`, `coordinates {{lat,lng}}`, `estimatedVisitMinutes`
+- **startPoint / endPoint**: `{{ name, coordinates {{ lat, lng }} }}`
+- **route**: `{{ geometry: {{ type: 'LineString', coordinates: [[lng,lat], ...] }}, distanceKm, durationMinutes }}`
+- **weather[]**: daily aggregates (avg/min/max temp, humidity, wind, description, icon) when available
+- **coverImage**: url & metadata when available
+- **owner**: user reference
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Security & Rate Limiting
+- **JWT** auth middleware (`protect`) guards most trip and image routes.  
+- **CORS** is controlled via `CLIENT_URL`.  
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Project Structure
+```
+Trip_Planner_FP_WEB/
+├─ server/
+│  ├─ controllers/       # auth, trips, images
+│  ├─ models/            # Mongoose schemas (User, Trip)
+│  ├─ routes/            # /api/auth, /api/trips, /api/images
+│  ├─ services/          # aiService, routingService, weatherService, imageSearchService
+│  ├─ middleware/        # auth
+│  └─ server.js
+└─ client/
+   └─ src/
+      ├─ pages/          # PlanTrip, TripView, TripHistory, Dashboard, Weather
+      ├─ components/     # Map/RouteMap, Auth, Layout/Navbar, DebugPanel
+      ├─ context/        # AuthContext
+      └─ services/       # api.js
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Development Tips
+- **Leaflet icons:** loaded from CDN in the client; for offline usage, host the icon assets locally and update paths.  
+- **Routing:** `services/routingService.js` can switch between real OpenRoute/Mapbox and demo routes depending on keys.  
+- **Images:** `imageSearchService` prefers Pixabay; add alternatives if required by licensing.  
+- **Testing:** add unit tests for services (AI/route/weather/image), API tests with `supertest`, and UI tests with React Testing Library.
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Known Issues
+- Rouut creating still need a minor improvment.
+- User stays loggef in when the server is shut down. 
+- Cities and interest points can be retirived from AI in the native langauge.   
+
+---
+
+## Future Work
+- ✅ Add **unit/API/UI tests** and **CI**.  
+- ✅ Provide **Dockerfiles** and `docker-compose` (including MongoDB).  
+- ✅ Fully integrate OpenRoute/Mapbox + OpenWeather with robust fallbacks.  
+- ✅ Improve map UX (route editing, waypoint re‑ordering, POI categories/filters).
+
+---
+—  
+_Last updated: 2025-08-14_
